@@ -1,5 +1,7 @@
 # БЕРИ (BERI)
 
+Общая инструкция команды: [specification.md](specification.md). Она хранится в репозитории и актуализируется вместе с каждым PR.
+
 **БЕРИ** — веб-сервис краткосрочной аренды бытовых, технических и развлекательных товаров через сеть пунктов выдачи (ПВ).
 
 Пользователь выбирает товар в каталоге, бронирует доступный физический экземпляр в выбранном ПВ, получает его у сотрудника, использует и возвращает в тот же ПВ. Сотрудник подтверждает возврат и проверяет состояние товара. Система рассчитывает стоимость по фактическому времени аренды и взаимодействует с внешним платёжным сервисом.
@@ -174,7 +176,7 @@ System check identified no issues
 
 `migrate` пока применяет стандартные миграции Django во временную локальную SQLite. Остановить сервер — **Ctrl+C**.
 
-> **Важно перед реализацией `Account`:** сейчас ещё не следует без согласования создавать пользовательскую модель и бизнес-миграции. Выбор `AUTH_USER_MODEL` нужно окончательно согласовать до первых миграций, зависящих от пользовательской модели. Если вы уже применяли стандартные миграции Django локально, это не означает, что целевая PostgreSQL-модель пользователей утверждена.
+> **Важно:** реализована собственная `accounts.Account`. На новой базе сначала применяются её начальные миграции. Если в вашей среде уже есть стандартный `auth.User` и зависимые миграции, не переключайте существующую базу вслепую: нужен отдельный план переноса данных. Безопасные проверки на отдельной тестовой БД описаны в [инструкции Account/Employee](docs/accounts.md).
 
 ## 5. Настройки Django и переменные окружения
 
@@ -300,11 +302,13 @@ git push -u origin feature/task-name
 
 ## 8. Целевая модель PostgreSQL (следующий этап)
 
-Текущая проектная модель включает 20 предметных таблиц и использует **смешанную стратегию UUID и BIGINT**, а не UUID для всех сущностей.
+Целевая проектная модель включает 21 предметную таблицу и использует **смешанную стратегию UUID и BIGINT**. В этой задаче реализованы только `account`, `employee`, `pickup_point` и стандартные связи Django прав; наличие остальных приложений не означает реализации их моделей.
 
 - `UUID`: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`.
-- `BIGINT`: `employee`, `pickup_point`, `product_category`, `product`, `attribute_definition`, `category_attribute`, `product_component`, `product_item`, `product_item_location_history`, `product_tariff`, `inspection`, `inspection_problem`.
-- Составные ключи без отдельного `id`: `pickup_point_working_hours` и `product_attribute_value`.
+- `BIGINT`: `employee`, `pickup_point`, `product_category`, `product`, `attribute_definition`, `category_attribute`, `product_component`, `product_item`, `product_item_location_history`, `product_tariff`, `inspection`, `inspection_problem`, `pickup_point_working_hours`, `product_attribute_value`, `reservation_item_assignment`.
+- У `pickup_point_working_hours` и `product_attribute_value` предусмотрены отдельный BIGINT `id` и уникальность исходной пары полей; составных PK в целевой модели нет.
+
+Роли, создание администратора, ограничения сотрудника по ПВ и команды тестирования: [Account / Employee / Django permissions](docs/accounts.md).
 
 ## 9. Краткая памятка для нового участника
 
