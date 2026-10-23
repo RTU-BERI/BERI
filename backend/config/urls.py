@@ -14,4 +14,3 @@ urlpatterns = [
     # Подключаем API категорий товаров
     path("api/", include("apps.catalog.urls")),
 ]
-
