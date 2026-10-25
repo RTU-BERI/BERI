@@ -342,7 +342,6 @@ class DatabaseLayerCompatibilityTests(TestCase):
             import sys
 
             forbidden = {
-                'apps.accounts.forms',
                 'apps.payments._internal',
                 'apps.payments.errors',
                 'apps.payments.finance',
@@ -375,7 +374,9 @@ class DatabaseLayerCompatibilityTests(TestCase):
             from django.contrib import admin
             from django.contrib.auth import get_user_model
             from django.contrib.auth.models import Group
-            from apps.accounts.models import Account
+            from apps.accounts.models import Account, Employee
+            from apps.accounts.admin import AccountAdmin, EmployeeAdmin, TrustedGroupAdmin
+            from apps.accounts.admin_access import TrustedAdminMixin
 
             domain = []
             for config in apps.get_app_configs():
@@ -386,8 +387,15 @@ class DatabaseLayerCompatibilityTests(TestCase):
             admin.autodiscover()
             assert len(domain) == 21
             assert get_user_model() is Account
-            assert not admin.site.is_registered(Account)
+            assert admin.site.is_registered(Account)
+            assert admin.site.is_registered(Employee)
             assert admin.site.is_registered(Group)
+            for model, expected in (
+                (Account, AccountAdmin), (Employee, EmployeeAdmin),
+                (Group, TrustedGroupAdmin),
+            ):
+                assert isinstance(admin.site._registry[model], expected)
+                assert isinstance(admin.site._registry[model], TrustedAdminMixin)
             assert admin.site.login_form is None
             assert not (forbidden & set(sys.modules))
             print('db-layer-imports-ok')
@@ -455,7 +463,17 @@ class DatabaseLayerCompatibilityTests(TestCase):
             account_type="employee", status=TEST_STATUS,
         )
         self.assertTrue(account.check_password(TEST_PASSWORD))
-        self.assertFalse(admin.site.is_registered(Account))
+        from .admin import AccountAdmin, EmployeeAdmin, TrustedGroupAdmin
+        from .admin_access import TrustedAdminMixin
+        from .models import Employee
+
+        for model, expected in (
+            (Account, AccountAdmin), (Employee, EmployeeAdmin),
+            (Group, TrustedGroupAdmin),
+        ):
+            self.assertTrue(admin.site.is_registered(model))
+            self.assertIsInstance(admin.site._registry[model], expected)
+            self.assertIsInstance(admin.site._registry[model], TrustedAdminMixin)
         self.assertIsNone(admin.site.login_form)
         response = self.client.post(
             reverse("admin:login"),
