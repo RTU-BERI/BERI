@@ -41,3 +41,9 @@ htmlcov/
 # Future Python tools
 .mypy_cache/
 .ruff_cache/
+
+# Frontend dependencies, build output and browser test artifacts
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/

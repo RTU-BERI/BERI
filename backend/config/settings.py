@@ -151,3 +151,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# S1-P4 local demo: the env flag alone cannot assert a safe server binding.
+BERI_DEMO_REGISTRATION_ENABLED = env.bool("BERI_DEMO_REGISTRATION_ENABLED", default=False)
+BERI_LOCAL_BIND_CONFIRMED = False  # set only by run_local_demo, or explicit tests
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "auth_demo": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "beri-auth-demo"},
+}
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = not DEBUG or env.bool("DJANGO_COOKIE_SECURE", default=True)
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
