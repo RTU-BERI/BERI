@@ -1,8 +1,8 @@
 # BERI API — current overview and category contract
 
-Updated 2026-10-31 for base `5e2a39a` (merged PR #9/#10) and working
-branch `feature/s1-p3-catalog-admin`. S1-P3 adds Admin writes, not public
-API endpoints or changes to existing response formats.
+Updated 2026-11-02 for base `9bcc95b` (merged PR #11) and working
+branch `feature/s1-p5-catalog`. S1-P5 consumes existing public API;
+no backend endpoints or response formats change.
 
 | Method | Path | Current contract |
 |---|---|---|
@@ -14,6 +14,20 @@ API endpoints or changes to existing response formats.
 | GET/POST | `/api/auth/*` | Session/CSRF endpoints; exact methods and payloads in [auth.md](auth.md) |
 
 Product list fields: id, name, category (ID), status, image_url, brand, model.
+`id` and `category` are JSON numbers (BIGINT IDs), `name` and `status` are
+strings; `image_url`, `brand` and `model` are nullable strings (also may be empty).
+Both category/product lists are unpaginated arrays, including `[]` for no matches.
+Product list is public with authentication disabled and AllowAny, just like categories.
+`search` uses trimmed name `icontains`; `category` is a category ID. Together
+they narrow the same queryset (AND); results are ordered by name/id.
+
+The Desktop UI `/catalog` uses these endpoints via the existing same-origin
+client and URLSearchParams. It maps product.category to category names using
+the category list; it ignores stale responses, distinguishes API errors from
+empty results, and falls back for missing/broken images. A changed array/field
+contract is treated as an error. Contract changes are a BERI-104-A dependency;
+do not replace the API with permanent fixtures. Details: [S1-P5 report](s1-p5-report.md).
+
 Detail fields: id, name, description, image_url, brand, model, status, category
 (id/name), attributes, components, tariff, created_at, updated_at.
 Attributes expose name, unit, value_text, value_number, value_boolean;

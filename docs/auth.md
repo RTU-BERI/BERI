@@ -124,7 +124,11 @@ Vite binds loopback, proxies relative /api to 127.0.0.1:8000 with changeOrigin:f
 and keeps the browser's original Host so standard Origin/CSRF checks work.
 Do not disable CSRF/CORS or add arbitrary trusted origins to mask proxy problems.
 
-Routes: /login and /register. AuthProvider/useAuth restores me, exposes global
+Routes: /login and /register; S1-P5 adds public /catalog, the default redirect
+and shared navigation to catalog/login/account/register. Catalog does not wait
+for session verification and remains accessible if me fails. Login/logout remain
+on /login; the session implementation and CSRF client are unchanged.
+AuthProvider/useAuth restores me, exposes global
 state and refreshes on focus. The shared client uses same-origin cookies and reads
 the current CSRF cookie before every mutation, including after login rotation.
 No sessionid/JWT/password is stored in localStorage/sessionStorage or URLs.
@@ -139,7 +143,7 @@ automatically retried after an unsafe failure, avoiding duplicate mutations.
 
 S1-P4 owns features/auth/* and shared/api/client.ts. App/main/router are the
 minimum bootstrap to demonstrate auth, not the catalogue/general product shell.
-S1-P5 takes ownership of the shared shell/layout/router after integration and
+S1-P5 now owns the shared shell/layout/router in its working branch and
 reuses this bootstrap/AuthProvider; S1-P6 adds product details, not another app.
 
 ## Verification
@@ -166,8 +170,11 @@ npm run build
 npm run test:e2e
 ```
 
-E2E uses installed Google Chrome at Desktop size. The first two scenarios use the
+E2E defaults to installed Google Chrome at Desktop size; select installed Edge
+with `BERI_E2E_BROWSER=msedge npm run test:e2e` in Git Bash. The first two auth scenarios use the
 real backend; others mock failures to verify UI states deterministically. Use a
 fresh demo DB/cache for each complete browser run; alternatively set a fresh
 synthetic BERI_E2E_PHONE and restart the demo server to clear process-local limits.
 Artifacts are ignored by Git. Actual counts/results belong to the task report.
+S1-P5 adds eight mocked catalog scenarios and one real API catalog scenario;
+the latter requires a nonempty isolated demo catalog. See [report](s1-p5-report.md).
