@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// One frontend. P5 owns the future general app shell/router.
+// Same-origin API proxy preserves session cookies and CSRF checks.
 export default defineConfig({
   plugins: [react()],
   server: {

@@ -33,6 +33,10 @@ test('real API: register, errors, login, persistent me, CSRF rotation, logout', 
   const me = await page.evaluate(async () => (await fetch('/api/auth/me/')).json());
   expect(me.authenticated).toBeTruthy();
   expect(me.user.phone_verified).toBeFalsy();
+  await page.getByRole('navigation').getByRole('link', {name: 'Каталог'}).click();
+  await expect(page.getByRole('heading', {name: 'Каталог товаров'})).toBeVisible();
+  await page.getByRole('navigation').getByRole('link', {name: 'Мой аккаунт'}).click();
+  await expect(page.getByRole('heading', {name: 'Вы вошли'})).toBeVisible();
   await expect(page.getByText('Телефон не подтверждён.', {exact: false})).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', {name: 'Вы вошли'})).toBeVisible();
