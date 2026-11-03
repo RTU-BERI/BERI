@@ -3,6 +3,7 @@ import {LoginPage} from './features/auth/LoginPage';
 import {RegisterPage} from './features/auth/RegisterPage';
 import {useAuth} from './features/auth/AuthProvider';
 import {CatalogPage} from './features/catalog/CatalogPage';
+import {ProductPage} from './features/product/ProductPage';
 
 function AuthLayout() {
   return <main><aside><p className="eyebrow">МЕНЬШЕ ПОКУПОК. БОЛЬШЕ ВОЗМОЖНОСТЕЙ.</p><h2>Бери для дела.<br/>Возвращай<br/><em>без забот.</em></h2><p>Нужные вещи — тогда, когда они нужны.</p><div className="graphic" aria-hidden="true"><span>Б</span><i>↗</i></div></aside><Outlet/></main>;
@@ -15,6 +16,7 @@ export function App() {
     <span className="demo-tag">Локальная демонстрация</span></header>
     <Routes>
       <Route path="/catalog" element={<CatalogPage/>}/>
+      <Route path="/products/:id" element={<ProductPage/>}/>
       <Route element={<AuthLayout/>}><Route path="/login" element={<LoginPage/>}/><Route path="/register" element={<RegisterPage/>}/></Route>
       <Route path="*" element={<Navigate to="/catalog" replace/>}/>
     </Routes>

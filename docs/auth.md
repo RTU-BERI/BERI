@@ -124,10 +124,11 @@ Vite binds loopback, proxies relative /api to 127.0.0.1:8000 with changeOrigin:f
 and keeps the browser's original Host so standard Origin/CSRF checks work.
 Do not disable CSRF/CORS or add arbitrary trusted origins to mask proxy problems.
 
-Routes: /login and /register; S1-P5 adds public /catalog, the default redirect
-and shared navigation to catalog/login/account/register. Catalog does not wait
-for session verification and remains accessible if me fails. Login/logout remain
-on /login; the session implementation and CSRF client are unchanged.
+Routes: /login and /register; merged PR #12 (S1-P5) adds public /catalog, the
+default redirect and shared navigation to catalog/login/account/register.
+Working branch S1-P6 adds public /products/:id. Catalog and product details do
+not wait for session verification and remain accessible if me fails.
+Login/logout remain on /login; the session implementation and CSRF client are unchanged.
 AuthProvider/useAuth restores me, exposes global
 state and refreshes on focus. The shared client uses same-origin cookies and reads
 the current CSRF cookie before every mutation, including after login rotation.
@@ -143,8 +144,8 @@ automatically retried after an unsafe failure, avoiding duplicate mutations.
 
 S1-P4 owns features/auth/* and shared/api/client.ts. App/main/router are the
 minimum bootstrap to demonstrate auth, not the catalogue/general product shell.
-S1-P5 now owns the shared shell/layout/router in its working branch and
-reuses this bootstrap/AuthProvider; S1-P6 adds product details, not another app.
+The shared shell/layout/router from S1-P5 is merged in PR #12 and reuses this
+bootstrap/AuthProvider; S1-P6 extends its router with product details.
 
 ## Verification
 
@@ -178,3 +179,6 @@ synthetic BERI_E2E_PHONE and restart the demo server to clear process-local limi
 Artifacts are ignored by Git. Actual counts/results belong to the task report.
 S1-P5 adds eight mocked catalog scenarios and one real API catalog scenario;
 the latter requires a nonempty isolated demo catalog. See [report](s1-p5-report.md).
+S1-P6 adds 22 mocked product scenarios and one real API product scenario.
+Results, including four supplementary local live checks, are recorded separately
+in the [S1-P6 report](s1-p6-report.md); they do not claim a new auth test run.

@@ -34,7 +34,8 @@ test('mocked: public catalog, cards, image fallback and auth navigation', async 
   await expect(page.getByRole('article').first()).toContainText('Бренд · Д-1');
   await expect(page.getByText('Нет изображения', {exact: true})).toHaveCount(2);
   await expect(page.getByRole('img', {name: 'Дрель компактная'})).toBeVisible();
-  await expect(page.getByRole('article').getByRole('link')).toHaveCount(0);
+  await expect(page.getByRole('article').getByRole('link')).toHaveCount(3);
+  await expect(page.getByRole('article').first().getByRole('link')).toHaveAttribute('href', '/products/1');
   await page.screenshot({path: 'test-results/catalog-desktop.png', fullPage: true});
   await page.getByRole('navigation').getByRole('link', {name: 'Войти', exact: true}).click();
   await expect(page.getByRole('heading', {name: 'Войти в БЕРИ'})).toBeVisible();

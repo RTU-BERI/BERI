@@ -1,7 +1,7 @@
 # BERI API — current overview and category contract
 
-Updated 2026-11-02 for base `9bcc95b` (merged PR #11) and working
-branch `feature/s1-p5-catalog`. S1-P5 consumes existing public API;
+Updated 2026-11-03 for base `d277aa2` (merged PR #12) and working
+branch `feature/s1-p6-product`. S1-P5 and S1-P6 consume existing public API;
 no backend endpoints or response formats change.
 
 | Method | Path | Current contract |
@@ -35,9 +35,20 @@ components expose name/quantity; tariff exposes hourly_rate/valid_from/valid_to.
 The current tariff satisfies `valid_from <= now < valid_to` (or has no end).
 No tariff means null, not an invented zero price.
 
+The S1-P6 Desktop UI `/products/:id` reads product detail, pickup points and
+availability through the existing same-origin client. Selecting a pickup point
+matches `pickup_point_id` locally; it does not add an API filter or request.
+Loading, retry, 404, missing tariff/image and unavailable stock have explicit UI
+states. A failed availability request is not displayed as zero stock. The UI
+uses the label `₽/час`; the current API has no separate currency field.
+See [S1-P6 report](s1-p6-report.md) for tests and scope.
+
 Availability currently counts ProductItem rows with status `available` per
 pickup point. It does not reserve an item or guarantee later booking; GET does
 not update status. Stronger booking/issuance checks belong to S2, not S1-P3.
+PickupPoint.status is an opaque string with no agreed active/inactive vocabulary
+or filter in these APIs. S1-P6 displays all returned pickup points; changing
+that business rule requires a separate decision.
 
 Data entered using the new catalog Admin is read by these existing endpoints.
 The Admin requires active staff and model permissions and preserves tariff and
