@@ -1,6 +1,9 @@
 """Публичное API для каталога."""
 
+import re
+
 from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -40,7 +43,18 @@ class ProductListAPIView(generics.ListAPIView):
 
         category = self.request.query_params.get("category")
         if category:
-            qs = qs.filter(category_id=category)
+            # Bound the input before int()/ORM conversion, including huge strings.
+            if (
+                re.fullmatch(r"[0-9]{1,19}", category) is None
+                or not 1 <= int(category) <= 9223372036854775807
+            ):
+                raise ValidationError(
+                    {"category": [
+                        "Укажите целый ID категории от 1 до "
+                        "9223372036854775807 (1–19 ASCII-цифр)."
+                    ]}
+                )
+            qs = qs.filter(category_id=int(category))
 
         return qs.order_by("name", "id")
 

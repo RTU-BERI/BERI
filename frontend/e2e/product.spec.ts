@@ -10,6 +10,14 @@ async function openProduct(page: Page) {
 }
 
 test('mocked: keyboard navigation from catalog, details, layout, price and local pickup changes', async ({page}) => {
+  // Headless Chrome/macOS does not drive the OS-owned select popup with arrows.
+  // Native collapsed-select type-ahead does receive real keyboard events. Use
+  // a shared ASCII prefix: repeated keys cycle matches without timing-dependent
+  // type-ahead buffers. Playwright inserts Cyrillic text without keydown.
+  // Russian labels remain covered by the other product tests; app UI is unchanged.
+  await page.route('**/api/pickup-points/', route => route.fulfill({json: pickupPoints.map((point, index) => ({
+    ...point, name: index === 0 ? 'Pickup alpha' : 'Pickup bravo',
+  }))}));
   const errors: string[] = [];
   const requests: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -55,22 +63,19 @@ test('mocked: keyboard navigation from catalog, details, layout, price and local
   await expect(pickup).toHaveCSS('outline-style', 'solid');
   await expect(pickup).toHaveCSS('outline-width', '3px');
   await expect(pickup).toHaveValue('');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('p');
   await expect(pickup).toHaveValue('11');
   await expect(page.getByText('Свободных экземпляров: 3', {exact: true})).toBeVisible();
   await expect(page.getByText(pickupPoints[0].address, {exact: true})).toBeVisible();
   const initialCount = requests.length;
   await page.screenshot({path: 'test-results/product-desktop.png', fullPage: true});
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('p');
   await expect(pickup).toHaveValue('22');
   await expect(page.getByText('Нет в наличии', {exact: true})).toBeVisible();
   await expect(page.getByText('Свободных экземпляров: 3', {exact: true})).toHaveCount(0);
   await expect(page.getByText(pickupPoints[1].address, {exact: true})).toBeVisible();
   await expect(page.getByText(pickupPoints[0].address, {exact: true})).toHaveCount(0);
-  await page.keyboard.press('ArrowUp');
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('p');
   await expect(pickup).toHaveValue('11');
   await expect(page.getByText('Свободных экземпляров: 3', {exact: true})).toBeVisible();
   expect(requests.length).toBe(initialCount); // Switching does not issue another all-points request.
@@ -280,9 +285,12 @@ for (const source of ['product', 'availability']) {
 test('mocked: public page survives session errors and scoped CSS preserves catalog and auth', async ({page}) => {
   await page.route('**/api/auth/me/', route => route.abort());
   await page.goto('/catalog');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await expect(page.getByRole('link', {name: product.name, exact: true})).toBeVisible();
   const catalogStyles = () => page.locator('header, footer, .product-card, .product-card h2, .catalog-filters select').evaluateAll(elements => elements.map(element => {
     const style = getComputedStyle(element);
-    return [style.color, style.backgroundColor, style.fontFamily, style.fontSize, style.borderRadius, style.padding, style.margin];
+    return [element.tagName, element.className, element.closest('article')?.querySelector('a')?.getAttribute('href') ?? '',
+      style.color, style.backgroundColor, style.fontFamily, style.fontSize, style.borderRadius, style.padding, style.margin];
   }));
   const before = await catalogStyles();
   await page.getByRole('link', {name: product.name, exact: true}).click();

@@ -1,12 +1,12 @@
 # БЕРИ — Specification.md для Codex
 
-> **Версия документа:** 1.2.3
+> **Версия документа:** 1.2.4
 >
 > **Актуализация:** 2026-11-03
 > **Репозиторий:** https://github.com/RTU-BERI/BERI  
-> **Проверенная база:** `origin/develop`, HEAD `d277aa22d8513092b4d287f79fe042a1cf259bde` (fetch и GitHub API, 03.11.2026)
+> **Проверенная база:** удалённый `develop`, HEAD `c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b` (Git ls-remote и metadata merged PR #8–13, 03.11.2026). Исправляющая ветка: `fix/s1-audit-closure`.
 >
-> **Статус:** обязательные инструкции + снимок develop после merge PR #12 (BERI-108-A) и изменения рабочей ветки `feature/s1-p6-product` (BERI-108-B, PR pending). Реализация и проверки S1-P6 — [отчёт](s1-p6-report.md). Финальные Code Review и Security Review не подтверждены.
+> **Статус:** develop включает merged PR #8–13. Локальное закрытие D1–D6 готовится в `fix/s1-audit-closure` без commit/push/PR/merge. Новые проверки, Code/Security Review и ограничения — [отчёт закрытия](s1-audit-closure-report.md); история S1-P6 — [отчёт](s1-p6-report.md). S1 не объявляется безусловно принятым до согласования результата и открытых бизнес-решений.
 > **Хранение:** пользователь 31.10.2026 разрешил включать этот `Specification.md` в Git и удалённый репозиторий вместе с изменениями проекта. Файл должен входить в соответствующий PR. Это не разрешение Codex выполнять commit/push/merge: правила §2 сохраняются.
 
 ## 1. Назначение и обязательность
@@ -103,11 +103,11 @@
 
 ## 5. Подтверждённая архитектура репозитория на 03.11.2026
 
-**Проверено fetch и GitHub API:** `origin/develop` и HEAD рабочей ветки — `d277aa22d8513092b4d287f79fe042a1cf259bde`, merge PR #12 с Desktop-каталогом. PR #11 с S1-P3 и PR #3, #6–#10 также входят в базу. Default branch на GitHub — `develop`. Активный ruleset `Protect develop` запрещает удаление и non-fast-forward; полный classic branch protection недоступен без авторизации (401), поэтому число обязательных approvals/CI-checks не подтверждено. Обязательные Code Review и Security Review из §2 сохраняются независимо от настроек GitHub. PR #1, #2, #4, #5 закрыты без merge и не являются источником канонических моделей. Результаты S1-P6 — в docs/s1-p6-report.md; история S1-P5 — в docs/s1-p5-report.md.
+**Проверено Git и metadata PR:** удалённый develop и base исправляющей ветки — `c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b`, merge PR #13. PR #3, #6–#12 также входят в базу. Существующие worktree не переключались; исправления подготовлены в отдельном `fix/s1-audit-closure`. Историческая проверка GitHub: default branch — `develop`, активный ruleset `Protect develop` запрещает удаление и non-fast-forward; полный classic branch protection недоступен без авторизации (401), поэтому число обязательных approvals/CI-checks не подтверждено. Обязательные Code Review и Security Review из §2 сохраняются независимо от настроек GitHub. PR #1, #2, #4, #5 закрыты без merge и не являются источником канонических моделей. Результаты S1-P6 — в docs/s1-p6-report.md; история S1-P5 — в docs/s1-p5-report.md.
 
 ```text
 BERI/
-├── README.md             # PR #12 merged; рабочие изменения S1-P6
+├── README.md             # merged PR #8–13; локальное закрытие аудита S1
 ├── compose.yaml          # PostgreSQL 17 локально
 ├── backend/
 │   ├── .env.example
@@ -138,12 +138,12 @@ BERI/
 | Desktop Auth UI | React login/register, AuthProvider, единый API-клиент, E2E база | PR #8; `frontend/src/App.tsx` |
 | Управление каталогом | Django Admin товаров, атрибутов, комплектации и тарифов, защита истории | PR #11, S1-P3 |
 | Desktop-каталог | `/catalog`, карточки, API-поиск/категория/сброс, loading/empty/error/retry, защита от старых ответов; публичный доступ | BERI-108-A, merged PR #12 |
-| Страница товара (рабочая ветка) | `/products/:id`, описание, характеристики, комплектация, текущий тариф, выбор ПВ и наличие; loading/error/retry/404 и возврат в каталог | BERI-108-B, feature/s1-p6-product, PR pending; 30 UI + 5 live-проверок |
+| Страница товара | `/products/:id`, описание, характеристики, комплектация, текущий тариф, выбор ПВ и наличие; loading/error/retry/404 и возврат в каталог | BERI-108-B, merged PR #13; исторические проверки в s1-p6-report.md, свежие — в s1-audit-closure-report.md |
 | Товары | `GET /api/products/?search=...&category=...`, `GET /api/products/{id}/`; характеристики, компоненты, текущий тариф | PR #9; `catalog/views.py` |
 | Пункты выдачи | `GET /api/pickup-points/`, `GET /api/pickup-points/{id}/`; часы работы | PR #10; `pickup_points/views.py` |
 | Текущее наличие | `GET /api/products/{id}/availability/`; число `available` экземпляров по ПВ; GET без записи | PR #10; `inventory/views.py` |
 
-**Нельзя утверждать, что реализованы:** мобильный каталог, API брони/выдачи/возврата, платежи/долги как работающие сервисы, SMS, JWT, восстановление доступа, промышленная безопасность/деплой. Существование модели не равняется готовому API. После PR #12 доступны `/catalog`, `/login`, `/register`; рабочая ветка S1-P6 добавляет `/products/:id`, но ещё не merged. Корень и неизвестные пути ведут на `/catalog`. Вход/выход остаются на `/login`, общая навигация ведёт в каталог и аккаунт.
+**Нельзя утверждать, что реализованы:** мобильный каталог, API брони/выдачи/возврата, платежи/долги как работающие сервисы, SMS, JWT, восстановление доступа, промышленная безопасность/деплой. Существование модели не равняется готовому API. После merged PR #8–13 доступны `/catalog`, `/login`, `/register` и `/products/:id`. Корень и неизвестные пути ведут на `/catalog`. Вход/выход остаются на `/login`, общая навигация ведёт в каталог и аккаунт.
 
 **S1-P3 merged в PR #11, S1-P5 merged в PR #12.** Исторические проверки — §9.1 и docs/s1-p5-report.md. S1-P6 использует существующие API товаров, ПВ и наличия без изменений Backend, моделей, миграций или зависимостей.
 
@@ -216,7 +216,7 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 5. Новая редакция `Specification.md` должна присутствовать в PR-diff. Пользователь разрешил хранение файла в локальном и удалённом репозитории 31.10.2026; повторное согласование хранения не требуется. Не включать в Git секреты или внешние документы без отдельного основания.
 6. Если изменения исключительно документационные, всё равно увеличь версию и обнови Change Log. Перед публикацией проверь, что номер не конфликтует с версией в другой параллельной ветке: при конфликте ребейз/повторный bump согласовать с пользователем.
 7. Не создавай бесконечный цикл «обновить spec → новый PR»: одно обновление включается в тот же PR. Если перед merge изменился base, повторно сверить diff/документацию и поправить changelog в рамках существующего PR.
-8. `main`/`develop` не редактировать напрямую. Codex не commit/push/PR/merge без обозначенных в §2 разрешений. Версия 1.2.3 подготовлена для PR S1-P6 поверх merged PR #12; следующий отдельный PR требует очередного повышения версии.
+8. `main`/`develop` не редактировать напрямую. Codex не commit/push/PR/merge без обозначенных в §2 разрешений. Версия 1.2.4 подготовлена для исправляющего PR S1 поверх merged PR #13; следующий отдельный PR требует очередного повышения версии.
 
 ### Минимальный PR checklist
 
@@ -234,9 +234,9 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 | BERI-104-A/B, API товаров | merged PR #9 |
 | BERI-105-A/B, API ПВ/наличия | merged PR #10 |
 | BERI-106-A/B, локальная demo-сессионная auth + UI | merged PR #8; production SMS/JWT **нет** |
-| BERI-107-A/B, Django Admin карточек/атрибутов/тарифов | merged PR #11; план/объяснение в docs/s1-p3-*.md |
+| BERI-107-A/B, Django Admin карточек/атрибутов/тарифов | merged PR #11; код catalog/admin*.py и тесты истории. Отсутствующие s1-p3-*.md не считаются доступными источниками |
 | BERI-108-A, Desktop-каталог | merged PR #12, merge commit d277aa2; исторические проверки в docs/s1-p5-report.md |
-| BERI-108-B, подробная карточка S1-P6 | реализована в feature/s1-p6-product; UI и live-интеграция проверены, документационный gate подготовлен; PR pending, финальные Code Review/Security Review не подтверждены |
+| BERI-108-B, подробная карточка S1-P6 | merged PR #13; аудит общего c018bb4 выявил D1–D6, исправления и свежие проверки — в s1-audit-closure-report.md |
 | Бронирование, выдача, возврат, расчёт, sandbox-платёж | впереди; модели уже существуют |
 
 План трёх спринтов от 26.10 — **предложение**, не основание приписывать TODO-задаче готовность. Актуализируй его статусы после проверенного merge. Наличие старой записи в README не отменяет merge #8–#10.
@@ -255,13 +255,27 @@ Rental; удаления нет. Product и справочники не удал
 Это политика Admin поверх неизменённых канонических моделей и 11 миграций.
 API коллег, frontend, осмотры/выдача/возврат и финансовые сервисы не изменены.
 
-### 9.2 Граница и проверки S1-P6 (PR pending)
+### 9.2 Граница S1-P6 (merged PR #13) и исторические проверки
 
 Страница товара публична, использует существующий same-origin API-клиент и три GET-ресурса: detail, pickup-points и availability. Выбор ПВ сопоставляет `pickup_point_id` локально без дополнительных запросов. Ошибка наличия не становится нулевым остатком; отсутствие тарифа не становится нулевой ценой. Decimal-строки форматируются без float; значения false и 0 сохраняются. Есть независимые повторы загрузки, защита от запоздалых ответов, заглушка изображения и прямые ссылки в каталог внутри ошибок. Бронирование не добавлено.
 
-03.11.2026 подтверждены production build, 30/30 mocked UI-сценариев, 1/1 штатный live-тест и 4/4 дополнительные локальные live-проверки на Python 3.13.17, Django 5.2.18 и собственной PostgreSQL 17.11. Применены 29 существующих миграций, включая 11 проектных; ожидающих нет. Полный backend test suite не запускался. Backend, глобальные CSS и зависимости не менялись. Учебная БД, `.env` и окружение исключены из Git. Подробности и воспроизведение — [s1-p6-report.md](s1-p6-report.md).
+В историческом отчёте автора S1-P6 от 03.11.2026 заявлены production build, 30/30 mocked UI-сценариев, 1/1 штатный live-тест и 4/4 дополнительные локальные live-проверки на Python 3.13.17, Django 5.2.18 и собственной PostgreSQL 17.11. Применены 29 существующих миграций, включая 11 проектных; ожидающих нет. Полный backend test suite не запускался. Backend, глобальные CSS и зависимости не менялись. Учебная БД, `.env` и окружение исключены из Git. Подробности и воспроизведение — [s1-p6-report.md](s1-p6-report.md).
 
-`PickupPoint.status` остаётся непрозрачной строкой: согласованного правила фильтрации неактивных ПВ нет; показываются все пункты из API. Метка `₽/час` используется в UI, отдельного поля currency в API нет. Проверен Chromium desktop; mobile, Firefox/WebKit и screen reader не проверены. Предварительное ревью сообщено пользователем; финальные независимые Code Review и Security Review текущего PR не считаются пройденными без подтверждения.
+`PickupPoint.status` остаётся непрозрачной строкой: согласованного правила фильтрации неактивных ПВ нет; показываются все пункты из API. Метка `₽/час` используется в UI, отдельного поля currency в API нет. Проверен Chromium desktop; mobile, Firefox/WebKit и screen reader не проверены. Прежние результаты не являются новым прогоном исправлений. Границы Code Review, Security Review и keyboard-проверки исправляющей ветки явно указаны в отчёте закрытия; внешнее reviewer approval не имитируется.
+
+### 9.3 Исправляющая ветка финального аудита S1
+
+`fix/s1-audit-closure` ограничена D1–D6: локальная category-валидация/400,
+постоянные HTTP-тесты 104-A/B, native keyboard type-ahead и синхронизация
+CSS baseline в тестах, актуальный статус merged #8–13 и действительные ссылки.
+Схема БД, модели, миграции, auth/session/CSRF и сам UI не изменяются.
+Пропущенный/пустой category не фильтрует список; неизвестный допустимый ID
+даёт 200 []; невалидный формат/диапазон — 400 с field-error JSON (см. API.md).
+
+Словари/допуски Product.status и PickupPoint.status, а также валюта не
+придумываются. Native arrow-popup на headless Mac не объявляется проверенным
+ручным сценарием: автоматический тест использует настоящие keyboard events
+для стандартного type-ahead. Результаты и риски — [отчёт](s1-audit-closure-report.md).
 
 ## 10. Журнал изменений документа
 
@@ -270,13 +284,14 @@ API коллег, frontend, осмотры/выдача/возврат и фин
 | ранее | 1.0.0 | Первичная спецификация семи ролей и Git-политики | предыдущая договорённость |
 | ранее | 1.1.0 | Добавлена роль Documentation Engineer, обязательный update на каждый PR и SemVer | предыдущая договорённость |
 | 2026-10-31 | **1.2.0** | Сверка защищённых веток и develop HEAD; учтены merge PR #8/#9/#10; фактические React/Vite/TS, session/CSRF, demo gate, API товаров/ПВ/наличия; обновлены проверки и документационные ограничения | GitHub `develop` SHA `5e2a39a77f8d2a3de2b7f659039da70e7314d602`; без сегодняшнего тестового прогона |
-| 2026-10-31 | **1.2.0 → 1.2.1** | Разрешено хранение Specification.md в Git/remote; согласовано необязательное фото; реализованы BERI-107-A/B с правами, формами и защитой истории; 30 новых тестов. План: docs/s1-p3-plan.md; отчёт: docs/s1-p3-report.md; README/API/project-state актуализированы | PR pending, feature/s1-p3-catalog-admin, base 5e2a39a77f8d2a3de2b7f659039da70e7314d602; PostgreSQL replay/check/no migration drift, полный backend 663/663; browser E2E не запускался, merge не выполнен |
+| 2026-10-31 | **1.2.0 → 1.2.1** | Разрешено хранение Specification.md в Git/remote; согласовано необязательное фото; реализованы BERI-107-A/B с правами, формами и защитой истории; 30 новых тестов. Первоначальные локальные план/отчёт не включены в Git; это историческая запись, не доступные источники. Действующие источники: merged PR #11, catalog/admin.py и тесты Admin/истории; README/API/project-state актуализированы | PR pending, feature/s1-p3-catalog-admin, base 5e2a39a77f8d2a3de2b7f659039da70e7314d602; PostgreSQL replay/check/no migration drift, полный backend 663/663; browser E2E не запускался, merge не выполнен |
 | 2026-11-02 | **1.2.1 → 1.2.2** | BERI-108-A: публичный Desktop-каталог, поиск и категории через API, сброс, состояния и image fallback; общая навигация с сохранением auth. Учтён merge S1-P3 #11. README, API, auth и новый s1-p5-report.md актуализированы | PR pending, feature/s1-p5-catalog, base 9bcc95bbbf191de11f1e4577165983730d20e303. Фактические проверки и ограничения — s1-p5-report.md; commit/push/PR не выполнены |
 | 2026-11-03 | **1.2.2 → 1.2.3** | Учтён merged PR #12. BERI-108-B: `/products/:id`, тариф, характеристики, комплектация, ПВ/остатки, ошибки/404 и клавиатура; README, API, auth и s1-p6-report.md актуализированы без изменения бизнес-спецификации | PR pending, feature/s1-p6-product → develop; проверенная база d277aa22d8513092b4d287f79fe042a1cf259bde. Build, 30 UI, 1 штатный live + 4 локальных live прошли; полный backend suite не запускался, финальные Code/Security Review ожидаются; commit/push/PR/merge не выполнялись |
+| 2026-11-03 | **1.2.3 → 1.2.4 (PATCH)** | Закрытие D1–D6: category/400, HTTP API coverage, keyboard/CSS тесты, merged #8–13 и исправление ссылок; README/API/P6-report и новый closure report. Исторические даты и результаты сохранены; CR-1 закрыт заменой оставшейся смысловой отсылки на PR #11, Admin и реальные тесты | `fix/s1-audit-closure`, PR pending (не создан), base c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b. Фактические новые результаты/риски — s1-audit-closure-report.md; модели и миграции неизменны, commit/push/PR/merge не выполнялись |
 
 ## 11. Источники для обязательной сверки
 
-- [GitHub: develop](https://github.com/RTU-BERI/BERI/tree/develop) и [PR #8](https://github.com/RTU-BERI/BERI/pull/8), [PR #9](https://github.com/RTU-BERI/BERI/pull/9), [PR #10](https://github.com/RTU-BERI/BERI/pull/10), [PR #12 — Desktop-каталог](https://github.com/RTU-BERI/BERI/pull/12).
+- [GitHub: develop](https://github.com/RTU-BERI/BERI/tree/develop) и [PR #8](https://github.com/RTU-BERI/BERI/pull/8), [PR #9](https://github.com/RTU-BERI/BERI/pull/9), [PR #10](https://github.com/RTU-BERI/BERI/pull/10), [PR #11 — Admin](https://github.com/RTU-BERI/BERI/pull/11), [PR #12 — Desktop-каталог](https://github.com/RTU-BERI/BERI/pull/12), [PR #13 — страница товара](https://github.com/RTU-BERI/BERI/pull/13).
 - [PR #3 — каноническая БД](https://github.com/RTU-BERI/BERI/pull/3), [PR #6 — категории](https://github.com/RTU-BERI/BERI/pull/6), [PR #7 — permissions](https://github.com/RTU-BERI/BERI/pull/7).
 - Актуальные исходники в `backend/config/`, `backend/apps/`, `frontend/`, `docs/`; открывать файлы непосредственно перед новым PR.
 - Согласованные проектные документы из источников проекта: `БЕРИ_Главная_спецификация_v1.3.0.md`, `БЕРИ_Контекст_модели_БД_v3.2.0.md`, `БД_Актуализированная.drawio`, `БЕРИ_Тех требования_статус_реализации_2026-10-26.docx`, `Описание бизнес-процессов_статус_реализации_2026-10-26.docx`, `Документация_Бери_редакция_2026-10-26.docx`.
