@@ -6,7 +6,7 @@
 > **Репозиторий:** https://github.com/RTU-BERI/BERI  
 > **Проверенная база:** `origin/develop`, HEAD `9bf42db47f76b848e883f285ffd0caf67ce0c8b7` (merge PR #17, включает #15/#16); проверка 19.11.2026. Рабочая ветка `feature/s2-p3-reservations-ui`.
 >
-> **Статус:** develop включает merged PR #8–17. Эта S2-P3 feature-ветка добавляет Desktop UI создания/истории/отмены бронирований и представляется Draft PR в develop. Backend API уже merged, но настоящая live-интеграция S2 ещё не выполнена. Merge S2-P3 не выполнялся. Датированные проверки и ограничения — [S2-P3](s2-p3-report.md); история S1 — [закрытие аудита](s1-audit-closure-report.md).
+> **Статус:** develop включает merged PR #8–17. Эта S2-P3 feature-ветка добавляет Desktop UI создания/истории/отмены бронирований и опубликована в [Draft PR #18](https://github.com/RTU-BERI/BERI/pull/18) → develop. Backend API уже merged, но настоящая live-интеграция S2 ещё не выполнена. Merge S2-P3 не выполнялся. Датированные проверки и ограничения — [S2-P3](s2-p3-report.md); история S1 — [закрытие аудита](s1-audit-closure-report.md).
 > **Хранение:** пользователь 31.10.2026 разрешил включать этот `Specification.md` в Git и удалённый репозиторий вместе с изменениями проекта. Файл должен входить в соответствующий PR. Это не разрешение Codex выполнять commit/push/merge: правила §2 сохраняются.
 
 ## 1. Назначение и обязательность
@@ -248,7 +248,7 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 | BERI-108-B, подробная карточка S1-P6 | merged PR #13; аудит общего c018bb4 выявил D1–D6, исправления и свежие проверки — в s1-audit-closure-report.md |
 | BERI-202-A и BERI-203-A | merged PR #15. Создание брони на 60 минут, истечение, команда `expire_reservations`. [Код сервиса](../backend/apps/reservations/services.py) |
 | API бронирования и отмены | merged PR #16; клиент/Employee scope; UI S2-P3 в отдельной feature-ветке |
-| BERI-204-A/B, S2-P3 | Эта feature-ветка: создание, история, статусы и отмена; Draft PR, live-интеграция и внешние approvals ожидаются |
+| BERI-204-A/B, S2-P3 | Эта feature-ветка: создание, история, статусы и отмена; [Draft PR #18](https://github.com/RTU-BERI/BERI/pull/18); live-интеграция и внешние approvals ожидаются |
 | BERI-301-A/B | merged PR #17, S2-P4: осмотр, проблемы, атомарные последовательные замены/явная отмена; [отчёт](s2-p4-report.md) |
 | UI сотрудника, выдача, возврат, расчёт, sandbox-платёж | следующие задачи |
 
@@ -345,7 +345,7 @@ Frontend сохранён, Backend/миграции/global CSS/dependencies бе
 | 2026-11-03 | **1.2.3 → 1.2.4 (PATCH)** | Закрытие D1–D6: category/400, HTTP API coverage, keyboard/CSS тесты, merged #8–13 и исправление ссылок; README/API/P6-report и новый closure report. Исторические даты и результаты сохранены; CR-1 закрыт заменой оставшейся смысловой отсылки на PR #11, Admin и реальные тесты | `fix/s1-audit-closure`, PR pending (не создан), base c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b. Фактические новые результаты/риски — s1-audit-closure-report.md; модели и миграции неизменны, commit/push/PR/merge не выполнялись |
 | 2026-11-16 | **1.2.4 → 1.2.5** | S2-P1 включает BERI-202-A и BERI-203-A. Атомарное создание, повторы по UUID запроса, срок 60 минут и освобождение по команде Django. Интеграция с выдачей через проверку `expires_at`. | `feature/s2-p1-booking`, PR pending, база `develop` `e31f18aa6f9de52fe2aab1ae4667017a70a6b1ed`. PostgreSQL 17, чистое применение миграций, Django check, 711 Backend-тестов (14 новых). |
 | 2026-11-19 | **1.2.5 → 1.2.6 (PATCH)** | S2-P4 BERI-301-A/B: осмотр/проблемы, атомарная замена/явная отмена, повторы и scoped Employee API; README/API/s2-p4-report обновлены. Решения пользователя записаны в§6.3 | `feature/s2-p4-inspections`, PR pending; base0a565ac97ec9364430403c78ed4f01333ff3b39a, merged #15/#16. Модели/миграции неизменны; фактические проверки и ограничения — s2-p4-report.md; commit/push/PR/merge не выполнялись |
-| 2026-11-19 | **1.2.6 → 1.2.7 (PATCH)** | S2-P3 BERI-204-A/B: встроенное подтверждение, единый ПВ, UUID retry, история/статусы/отмена и серверные сроки; README/API/auth и новый отчёт. Учтены merged #15–17; Frontend/тесты сохранены, Backend/миграции/global CSS без правок | `feature/s2-p3-reservations-ui` → `develop`, PR pending; проверенный base `9bf42db47f76b848e883f285ffd0caf67ce0c8b7`. Исторически 18.11: build и 78 E2E, 1 S2 live skipped. Финальная live-интеграция и внешние Code/Security approvals ожидаются; merge S2-P3 не выполнялся |
+| 2026-11-19 | **1.2.6 → 1.2.7 (PATCH)** | S2-P3 BERI-204-A/B: встроенное подтверждение, единый ПВ, UUID retry, история/статусы/отмена и серверные сроки; README/API/auth и новый отчёт. Учтены merged #15–17; Frontend/тесты сохранены, Backend/миграции/global CSS без правок | `feature/s2-p3-reservations-ui` → `develop`, Draft PR #18; проверенный base `9bf42db47f76b848e883f285ffd0caf67ce0c8b7`. Исторически 18.11: build и 78 E2E, 1 S2 live skipped. Финальная live-интеграция и внешние Code/Security approvals ожидаются; merge S2-P3 не выполнялся |
 
 ## 11. Источники для обязательной сверки
 
