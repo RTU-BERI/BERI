@@ -1,17 +1,21 @@
 import {useState} from 'react';
 import type {FormEvent} from 'react';
-import {Link, useLocation} from 'react-router-dom';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
 import {ApiError} from '../../shared/api/client';
 import {useAuth} from './AuthProvider';
 import {FormFeedback} from './FormFeedback';
 
 export function LoginPage() {
   const auth = useAuth(); const location = useLocation();
+  const navigate = useNavigate();
   const [phone, setPhone] = useState(''); const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false); const [error, setError] = useState<ApiError | null>(null);
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError(null);
-    try {await auth.login({phone, password}); setPassword('');}
+    try {await auth.login({phone, password}); setPassword('');
+      const returnTo: unknown = location.state?.returnTo;
+      if (typeof returnTo === 'string' && /^(?:\/my-reservations|\/products\/[1-9]\d*(?:\?pickup_point=[1-9]\d*)?)$/.test(returnTo)) navigate(returnTo, {replace: true});
+    }
     catch (e) {setError(e instanceof ApiError ? e : new ApiError('unknown', 'Не удалось войти. Повторите попытку.'));}
     finally {setBusy(false);}
   }

@@ -1,6 +1,6 @@
 # BERI API — current public contracts
 
-Updated 2026-11-19 against develop `0a565ac97ec9364430403c78ed4f01333ff3b39a` (merged PR #8–16). Category validation from S1 is merged in #14. The local `feature/s2-p4-inspections` adds the employee endpoints below; it is not yet published.
+Updated 2026-11-19 against develop `9bf42db47f76b848e883f285ffd0caf67ce0c8b7` (merged PR #8–17). Booking/expiry, customer/employee booking APIs and pre-issue inspection endpoints are merged. This S2-P3 feature branch adds the Desktop customer UI; its real reservation integration remains unverified.
 
 | Method | Path | Current contract |
 |---|---|---|
@@ -305,3 +305,52 @@ uses is_active, not an invented Account.status or Product/PV status vocabulary.
 Implementation: [services](../backend/apps/rentals/services.py),
 [API](../backend/apps/rentals/views.py), [tests](../backend/apps/rentals/test_pre_issue.py).
 Checks, limitations and handoff: [S2-P4 report](s2-p4-report.md).
+
+## Reservations contract consumed by S2-P3 (2026-11-19)
+
+Originally inspected on 2026-11-18 in PR #15/#16. On 2026-11-19 both are merged;
+reservation routes, serializers and views were compared with develop `9bf42db47f76b848e883f285ffd0caf67ce0c8b7`
+and match the contract below. This is a source comparison, not a live test.
+Backend files are inherited unchanged from develop.
+
+| Operation | Success |
+|---|---|
+| `GET /api/reservations/` | 200, array of the current customer's own reservations |
+| `POST /api/reservations/` | 201, reservation, including an idempotent retry |
+| `POST /api/reservations/{uuid}/cancel/` | 204, empty body |
+
+Create JSON is exactly `product_id` (positive integer), `pickup_point_id`
+(positive integer), `request_id` (UUID string). Backend chooses the physical
+item. One operation retains its UUID for network/5xx/invalid-response retries;
+only an explicitly new operation gets a new UUID.
+
+Response fields: `id` (UUID), `product_id`, `pickup_point_id`,
+`assigned_product_item_id` (integer or null), `status`, `created_at`,
+`expires_at`, `cancelled_at`, `completed_at`. The last two timestamps may be
+null. The serializer also returns `customer_phone`; S2-P3 deliberately discards
+it. There are no embedded product names, photos, PV addresses, tariff or
+`server_time`. Catalog/PV requests supply optional display information.
+
+The four statuses are `active`, `cancelled`, `expired`, `fulfilled`. The server
+creates a 60-minute hold. Retry returns the original record's current status
+and deadline; it may already be completed. GET availability never guarantees
+POST success. GET reservations does not run the expiry command.
+
+The merged reservation API uses DRF `detail` or field-error JSON, unlike auth's
+`error.code/message/fields`. The shared client supports both without changing
+auth's codes. Do not infer a no-stock conflict from HTTP 409 alone. Until stable
+codes are agreed, the Frontend recognizes only the two exact checked service
+messages about no free items / an item assigned to another reservation; UUID,
+expiry and other conflicts retain their own message. Session 403 requires a
+fresh `auth/me` check; it is not automatically logout. Another customer's
+reservation is outside the cancel queryset and returns 404.
+
+The client can observe response metadata through optional fourth `api` argument;
+existing payload return values stay unchanged. HTTP `Date`, when valid, supplies
+an approximate server clock; otherwise the UI explicitly labels device time.
+Countdown never writes status and requests server state once on reaching zero.
+
+Remaining acceptance checks: real session/CSRF behavior, concurrent booking,
+UUID retries, ownership, server expiry and regular expiry scheduling. Stable
+error codes remain a contract improvement to agree with the Backend team.
+Actual test results and live limitations: [S2-P3 report](s2-p3-report.md).

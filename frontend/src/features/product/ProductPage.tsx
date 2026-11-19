@@ -1,5 +1,5 @@
-import {useEffect, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {useCallback, useEffect, useState} from 'react';
+import {Link, useParams, useSearchParams} from 'react-router-dom';
 import {ApiError} from '../../shared/api/client';
 import {getProduct} from './api';
 import {formatDecimal} from './format';
@@ -7,7 +7,8 @@ import {PickupAvailability} from './PickupAvailability';
 import {ProductAttributes} from './ProductAttributes';
 import {ProductComponents} from './ProductComponents';
 import {ProductImage} from './ProductImage';
-import type {ProductDetail} from './types';
+import type {PickupPoint, ProductDetail} from './types';
+import {CreateReservation} from '../reservations/CreateReservation';
 import './product.css';
 
 type ProductState = {status: 'loading'} | {status: 'ready'; data: ProductDetail} | {status: 'error'; notFound: boolean};
@@ -21,6 +22,11 @@ function NotFound() {
 function ProductContent({id}: {id: number}) {
   const [state, setState] = useState<ProductState>({status: 'loading'});
   const [retry, setRetry] = useState(0);
+  const [params, setParams] = useSearchParams();
+  const [point, setPoint] = useState<PickupPoint>();
+  const [locked, setLocked] = useState(false);
+  const [availabilityRevision, setAvailabilityRevision] = useState(0);
+  const onCreated = useCallback(() => setAvailabilityRevision(value => value + 1), []);
 
   useEffect(() => {
     let active = true;
@@ -53,7 +59,11 @@ function ProductContent({id}: {id: number}) {
           {product.tariff ? <p className="product-page__price">{formatDecimal(product.tariff.hourly_rate, false)} <span>₽/час</span></p>
             : <p className="product-page__muted">Стоимость аренды сейчас недоступна.</p>}
         </section>
-        <PickupAvailability key={product.id} productId={product.id}/>
+        <PickupAvailability key={product.id} productId={product.id} selectedId={params.get('pickup_point') ?? ''}
+          onSelectedIdChange={value => setParams(previous => {const next = new URLSearchParams(previous);
+            if (value) next.set('pickup_point', value); else next.delete('pickup_point'); return next;
+          }, {replace: true})} onPointChange={setPoint} refreshKey={availabilityRevision} locked={locked}/>
+        <CreateReservation product={product} point={point} onCreated={onCreated} onLock={setLocked}/>
       </div>
     </div>
     <div className="product-page__sections">

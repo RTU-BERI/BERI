@@ -126,7 +126,7 @@ Do not disable CSRF/CORS or add arbitrary trusted origins to mask proxy problems
 
 Routes: /login and /register; merged PR #12 (S1-P5) adds public /catalog, the
 default redirect and shared navigation to catalog/login/account/register.
-Working branch S1-P6 adds public /products/:id. Catalog and product details do
+Merged S1-P6 adds public /products/:id. Catalog and product details do
 not wait for session verification and remain accessible if me fails.
 Login/logout remain on /login; the session implementation and CSRF client are unchanged.
 AuthProvider/useAuth restores me, exposes global
@@ -182,3 +182,36 @@ the latter requires a nonempty isolated demo catalog. See [report](s1-p5-report.
 S1-P6 adds 22 mocked product scenarios and one real API product scenario.
 Results, including four supplementary local live checks, are recorded separately
 in the [S1-P6 report](s1-p6-report.md); they do not claim a new auth test run.
+
+## S2-P3 Frontend extension (implemented 2026-11-18, PR preparation 2026-11-19)
+
+Checked develop is `9bf42db`; Backend reservation PRs #15/#16 are merged.
+Their real session/CSRF integration with this UI has not yet been executed.
+`/my-reservations` is client-only and offers the existing login to anonymous
+visitors. Product details keep their public access and single pickup selector.
+Employee login does not grant customer reservation access. Backend must enforce
+ownership independently; UI gating is not authorization.
+
+Reservation links carry an internal `returnTo` in Router state, including the
+selected pickup ID in the product URL. After successful login, only
+`/my-reservations` or `/products/{positive-id}` with an optional positive
+`pickup_point` query is accepted. External/arbitrary redirect targets are
+ignored. Normal login/logout behavior is retained. No new auth provider, token
+storage or session mechanism is introduced.
+
+The shared client now also reads standard DRF `detail`/field errors and exposes
+optional HTTP Date metadata. Existing auth error codes and fields, cookies,
+CSRF rotation, same-origin credentials and 204 behavior stay compatible. A 401
+session notification is dispatched even when its body is not JSON; login's
+invalid-credentials 401 remains excluded. A 403 alone never clears auth:
+reservation handlers recheck `me` to distinguish permission/CSRF from expiry.
+
+Pending create-operation UUIDs and results live only in module memory, survive
+internal route changes, and are cleared on account change/logout. No phone or
+credential is stored there; reservation `customer_phone` is discarded. Full page
+reload closes that in-memory operation context: after an unknown result, inspect
+the own history before intentionally starting another booking.
+
+Current verification and the opt-in real reservation test are documented in
+[S2-P3](s2-p3-report.md). Mocked reservation tests do not prove real Backend
+integration. The S1 auth/cookie safety restrictions above continue to apply.
