@@ -232,3 +232,79 @@ def expire_reservation(reservation_id: UUID) -> bool:
     if item.status == ProductItem.Status.RESERVED:
         _set_item_status(item, ProductItem.Status.AVAILABLE, now)
     return True
+
+@transaction.atomic
+def cancel_reservation(reservation_id: UUID) -> bool:
+    """Cancel an active reservation and release its assigned item once."""
+    candidate = (
+        Reservation.objects.filter(
+            pk=reservation_id,
+            status=Reservation.Status.ACTIVE,
+        )
+        .values("assigned_product_item_id")
+        .first()
+    )
+    if candidate is None:
+        return False
+
+    item_id = candidate["assigned_product_item_id"]
+    if item_id is None:
+        raise ValidationError("У бронирования отсутствует назначенный экземпляр.")
+
+    # Lock order: item first, reservation second.
+    item = (
+        ProductItem.objects.select_for_update()
+        .filter(pk=item_id)
+        .first()
+    )
+    reservation = Reservation.objects.select_for_update().get(pk=reservation_id)
+
+    if reservation.status != Reservation.Status.ACTIVE:
+        return False
+
+    now = timezone.now()
+
+    if not is_reservation_active(reservation, at=now):
+        raise ReservationConflict("Срок бронирования истёк.")
+
+    if (
+        item is None
+        or reservation.assigned_product_item_id != item.pk
+        or item.pickup_point_id != reservation.pickup_point_id
+        or item.status
+        not in {ProductItem.Status.RESERVED, ProductItem.Status.UNAVAILABLE}
+        or _active_rentals_for_item(item.pk).exists()
+    ):
+        raise ValidationError(
+            "Состояние экземпляра не позволяет отменить бронирование."
+        )
+
+    assignment = (
+        ReservationItemAssignment.objects.select_for_update()
+        .filter(
+            reservation=reservation,
+            product_item=item,
+            released_at__isnull=True,
+        )
+        .first()
+    )
+
+    if assignment is None:
+        raise ValidationError("Не найдена активная запись назначения экземпляра.")
+
+    assignment.released_at = now
+    models.Model.save(assignment, update_fields=("released_at",))
+
+    reservation.status = Reservation.Status.CANCELLED
+    reservation.cancelled_at = now
+    reservation.completed_at = now
+    models.Model.save(
+        reservation,
+        update_fields=("status", "cancelled_at", "completed_at"),
+    )
+
+    # Damaged items must remain unavailable.
+    if item.status == ProductItem.Status.RESERVED:
+        _set_item_status(item, ProductItem.Status.AVAILABLE, now)
+
+    return True
