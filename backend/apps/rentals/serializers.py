@@ -1,7 +1,7 @@
 """Employee inspection inputs and explicitly whitelisted history output."""
 
 from rest_framework import serializers
-from .models import Inspection, InspectionProblem
+from .models import Inspection, InspectionProblem, Rental
 
 
 class ProblemInputSerializer(serializers.Serializer):
@@ -50,4 +50,25 @@ class InspectionSerializer(serializers.ModelSerializer):
         model = Inspection
         fields = ("id", "reservation_id", "product_item_id", "employee_id", "inspection_type",
                   "condition_ok", "completeness_ok", "comment", "inspected_at", "problems")
+        read_only_fields = fields
+
+
+# Принимает назначение, которое сотрудник видел при подготовке выдачи.
+class RentalStartInputSerializer(serializers.Serializer):
+    expected_assignment_id = serializers.IntegerField(min_value=1, max_value=2**63-1)
+
+    # Не позволяет незаметно передать серверные поля вместо одного ID.
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and set(data) - set(self.fields):
+            raise serializers.ValidationError({"non_field_errors": ["Неизвестные или серверные поля запроса."]})
+        return super().to_internal_value(data)
+
+
+# Возвращает только договорённые данные аренды, без платёжных идентификаторов.
+class RentalSerializer(serializers.ModelSerializer):
+    # Задаёт явный неизменяемый контракт ответа.
+    class Meta:
+        model = Rental
+        fields = ("id", "reservation_id", "product_item_id", "status", "started_at",
+                  "started_by_employee_id", "tariff_id", "hourly_rate_applied")
         read_only_fields = fields

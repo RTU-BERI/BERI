@@ -1,12 +1,12 @@
 # БЕРИ — Specification.md для Codex
 
-> **Версия документа:** 1.2.6
+> **Версия документа:** 1.2.7
 >
-> **Актуализация:** 2026-11-19
+> **Актуализация:** 2026-11-20
 > **Репозиторий:** https://github.com/RTU-BERI/BERI  
-> **Проверенная база:** удалённый `develop`, HEAD `0a565ac97ec9364430403c78ed4f01333ff3b39a` (merge PR #16, включает #15). Рабочая ветка `feature/s2-p4-inspections`.
+> **Проверенная база:** актуальный `develop`, HEAD `9bf42db47f76b848e883f285ffd0caf67ce0c8b7` (merge PR #17, включает #15/#16). Рабочая ветка `feature/s2-p5-rental-start`.
 >
-> **Статус:** `develop` включает PR #8–16: бронирование/истечение и API/отмена уже merged. Локальная S2-P4 добавляет предвыдачной осмотр и атомарную замену/отмену сотрудником; выдача/Rental/Frontend не реализуются. Исторические результаты S1 описаны в [отчёте закрытия аудита](s1-audit-closure-report.md).
+> **Статус:** `develop` включает merged PR #8–17, включая осмотр и замену S2-P4. Локальная S2-P5 добавляет подтверждение выдачи сотрудником и начало Rental; ветка ещё не опубликована. Возврат, расчёт, платежная интеграция и Frontend не добавлены. Исторические результаты S1 описаны в [отчёте закрытия аудита](s1-audit-closure-report.md).
 > **Хранение:** пользователь 31.10.2026 разрешил включать этот `Specification.md` в Git и удалённый репозиторий вместе с изменениями проекта. Файл должен входить в соответствующий PR. Это не разрешение Codex выполнять commit/push/merge: правила §2 сохраняются.
 
 ## 1. Назначение и обязательность
@@ -143,7 +143,7 @@ BERI/
 | Пункты выдачи | `GET /api/pickup-points/`, `GET /api/pickup-points/{id}/`; часы работы | PR #10; `pickup_points/views.py` |
 | Текущее наличие | `GET /api/products/{id}/availability/`; число `available` экземпляров по ПВ; GET без записи | PR #10; `inventory/views.py` |
 
-**Нельзя утверждать, что реализованы:** мобильный каталог, API брони/выдачи/возврата, платежи/долги как работающие сервисы, SMS, JWT, восстановление доступа, промышленная безопасность/деплой. Существование модели не равняется готовому API. После merged PR #8–13 доступны `/catalog`, `/login`, `/register` и `/products/:id`. Корень и неизвестные пути ведут на `/catalog`. Вход/выход остаются на `/login`, общая навигация ведёт в каталог и аккаунт.
+**Нельзя утверждать, что реализованы:** мобильный каталог, API возврата, платежи/долги как работающие сервисы, SMS, JWT, восстановление доступа, промышленная безопасность/деплой. Существование модели не равняется готовому API. После merged PR #8–13 доступны `/catalog`, `/login`, `/register` и `/products/:id`. Корень и неизвестные пути ведут на `/catalog`. Вход/выход остаются на `/login`, общая навигация ведёт в каталог и аккаунт.
 
 **S1-P3 merged в PR #11, S1-P5 merged в PR #12.** Исторические проверки — §9.1 и docs/s1-p5-report.md. S1-P6 использует существующие API товаров, ПВ и наличия без изменений Backend, моделей, миграций или зависимостей.
 
@@ -203,6 +203,17 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 
 **Решение пользователя 31.10.2026 для S1-P3:** фото необязательно. `Product.image_url` сохраняет существующие `null=True, blank=True`; Django Admin позволяет создать товар без фото. Схему БД и контракт API ради этого не менять.
 
+### 6.4 S2-P5 — подтверждение выдачи и начало Rental
+
+- POST `/api/employee/reservations/{uuid}/issue/` принимает только `expected_assignment_id` из API осмотра. Требуются активный Employee своего ПВ и права `rentals.add_rental`, `reservations.change_reservation`, `reservations.change_reservationitemassignment`, `inventory.change_productitem`.
+- Для новой выдачи проверяются активный Account клиента типа customer, active-бронь и `T < expires_at` после ожидающих блокировок, текущее открытое назначение/reserved экземпляр, его положительный осмотр без проблем, отсутствие open Debt, default/active/confirmed PaymentMethod клиента с модельной валидацией и тариф `[valid_from, valid_to)`.
+- Одной транзакцией создаётся Rental(active) с временем, сотрудником, средством и снимком ставки; бронь становится fulfilled, текущее назначение закрывается, Item становится rented. История сохраняется; срок окончания и итог не задаются.
+- Первый успех 201; тот же сотрудник и назначение возвращают прежнюю Rental с 200 без повторных первичных условий. Другой сотрудник/назначение — 409. Права проверяются всегда. Проверка существующей Rental выполняется под общими Product/ПВ locks до `_locked_booking()`; ветка повтора не вызывает этот helper и не берёт Item после Reservation.
+- Новая ветка сохраняет порядок Actor/Employee → Product/ПВ → Customer → Item → Reservation/Assignments/размещение → PaymentMethod → Tariff. После ожидания проверяются время и права. Для будущих writers долга/default нужен тот же Customer lock; сами BERI-303 сейчас не реализуются.
+- Выдача не создаёт, не подтверждает и не списывает платежи. Подходит корректная PaymentMethod независимо от её происхождения; marker/DEBUG/localhost/специальные settings не проверяются.
+- `create_test_payment_method CLIENT_UUID` — только подготовка учебной записи при DEBUG=True. Генерирует тестовый ID без реквизитов, не меняет существующий default, не является проверкой настоящей карты. Ограничение DEBUG относится только к команде.
+- **Ограничение MVP:** выдачу подтверждает сотрудник; отдельного подтверждения клиента нет, `customer_confirmed_at` не заполняется. Auth не ослабляется: HTTP-проверка использует штатный вход Employee, а бронь тестового клиента с NULL phone_verified_at готовится существующим сервисом без клиентского HTTP-входа.
+
 ## 7. Код, API, тесты и безопасность
 
 - Python: PEP 8; `snake_case` для функций/переменных, `PascalCase` для классов, `UPPER_SNAKE_CASE` для констант. Небольшие функции, явные типы/смыслы и контролируемые ошибки.
@@ -225,7 +236,7 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 5. Новая редакция `Specification.md` должна присутствовать в PR-diff. Пользователь разрешил хранение файла в локальном и удалённом репозитории 31.10.2026; повторное согласование хранения не требуется. Не включать в Git секреты или внешние документы без отдельного основания.
 6. Если изменения исключительно документационные, всё равно увеличь версию и обнови Change Log. Перед публикацией проверь, что номер не конфликтует с версией в другой параллельной ветке: при конфликте ребейз/повторный bump согласовать с пользователем.
 7. Не создавай бесконечный цикл «обновить spec → новый PR»: одно обновление включается в тот же PR. Если перед merge изменился base, повторно сверить diff/документацию и поправить changelog в рамках существующего PR.
-8. `main`/`develop` не редактировать напрямую. Codex не commit/push/PR/merge без обозначенных в §2 разрешений. Версия 1.2.6 подготовлена для PR S2-P4 поверх merged PR #16; следующий отдельный PR требует очередного повышения версии.
+8. `main`/`develop` не редактировать напрямую. Codex не commit/push/PR/merge без обозначенных в §2 разрешений. Версия 1.2.7 подготовлена для PR S2-P5 поверх merged PR #17; следующий отдельный PR требует повышения относительно актуального develop.
 
 ### Минимальный PR checklist
 
@@ -236,9 +247,9 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 - [ ] README, API, auth и прочая затронутая документация обновлены или явно помечены как не затронутые.
 - [ ] Пользователь получил техническое и бизнес-объяснение, ручные команды commit/push и рекомендацию момента создания PR.
 
-## 9. Статус ближайших задач после PR #16
+## 9. Статус ближайших задач после PR #17
 
-| Область | На 19.11.2026 |
+| Область | На 20.11.2026 |
 |---|---|
 | BERI-104-A/B, API товаров | merged PR #9 |
 | BERI-105-A/B, API ПВ/наличия | merged PR #10 |
@@ -248,8 +259,9 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 | BERI-108-B, подробная карточка S1-P6 | merged PR #13; аудит общего c018bb4 выявил D1–D6, исправления и свежие проверки — в s1-audit-closure-report.md |
 | BERI-202-A и BERI-203-A | merged PR #15. Создание брони на 60 минут, истечение, команда `expire_reservations`. [Код сервиса](../backend/apps/reservations/services.py) |
 | API бронирования и отмены | merged PR #16; клиент/Employee scope, отдельный UI ещё впереди |
-| BERI-301-A/B | локальная S2-P4: осмотр, проблемы, атомарные последовательные замены/явная отмена; [отчёт](s2-p4-report.md) |
-| UI бронирования/сотрудника, выдача, возврат, расчёт, sandbox-платёж | следующие задачи |
+| BERI-301-A/B | merged PR #17, S2-P4: осмотр, проблемы, атомарные последовательные замены/явная отмена; [отчёт](s2-p4-report.md) |
+| BERI-301-C | локальная S2-P5: выдача и начало Rental; API и контракт в docs/API.md |
+| UI бронирования/сотрудника, возврат, расчёт, sandbox-платёж | следующие задачи |
 
 План трёх спринтов от 26.10 — **предложение**, не основание приписывать TODO-задаче готовность. Актуализируй его статусы после проверенного merge. Наличие старой записи в README не отменяет merge #8–#10.
 
@@ -302,10 +314,11 @@ CSS baseline в тестах, актуальный статус merged #8–13 �
 | 2026-11-03 | **1.2.3 → 1.2.4 (PATCH)** | Закрытие D1–D6: category/400, HTTP API coverage, keyboard/CSS тесты, merged #8–13 и исправление ссылок; README/API/P6-report и новый closure report. Исторические даты и результаты сохранены; CR-1 закрыт заменой оставшейся смысловой отсылки на PR #11, Admin и реальные тесты | `fix/s1-audit-closure`, PR pending (не создан), base c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b. Фактические новые результаты/риски — s1-audit-closure-report.md; модели и миграции неизменны, commit/push/PR/merge не выполнялись |
 | 2026-11-16 | **1.2.4 → 1.2.5** | S2-P1 включает BERI-202-A и BERI-203-A. Атомарное создание, повторы по UUID запроса, срок 60 минут и освобождение по команде Django. Интеграция с выдачей через проверку `expires_at`. | `feature/s2-p1-booking`, PR pending, база `develop` `e31f18aa6f9de52fe2aab1ae4667017a70a6b1ed`. PostgreSQL 17, чистое применение миграций, Django check, 711 Backend-тестов (14 новых). |
 | 2026-11-19 | **1.2.5 → 1.2.6 (PATCH)** | S2-P4 BERI-301-A/B: осмотр/проблемы, атомарная замена/явная отмена, повторы и scoped Employee API; README/API/s2-p4-report обновлены. Решения пользователя записаны в§6.3 | `feature/s2-p4-inspections`, PR pending; base0a565ac97ec9364430403c78ed4f01333ff3b39a, merged #15/#16. Модели/миграции неизменны; фактические проверки и ограничения — s2-p4-report.md; commit/push/PR/merge не выполнялись |
+| 2026-11-20 | **1.2.6 → 1.2.7 (PATCH)** | S2-P5 BERI-301-C: обычный Employee issue API, атомарное начало Rental, точные повторы, учебная CLI без платёжного сервиса; актуализирован merged #17. README/API обновлены; customer_confirmed_at остаётся NULL | `feature/s2-p5-rental-start`, PR pending; base `9bf42db47f76b848e883f285ffd0caf67ce0c8b7`. Модели/миграции и сервисы коллег не изменены; PostgreSQL 17.11: 26/26 новых тестов, 787/787 Backend, Django check/no migration drift; настоящий HTTP 201/200 с Employee session/CSRF, phone_verified_at=NULL. Commit/push/PR/merge не выполнялись |
 
 ## 11. Источники для обязательной сверки
 
-- [PR #15 — бронирование/истечение](https://github.com/RTU-BERI/BERI/pull/15), [PR #16 — API/отмена](https://github.com/RTU-BERI/BERI/pull/16).
+- [PR #15 — бронирование/истечение](https://github.com/RTU-BERI/BERI/pull/15), [PR #16 — API/отмена](https://github.com/RTU-BERI/BERI/pull/16), [PR #17 — осмотр/замены](https://github.com/RTU-BERI/BERI/pull/17).
 - [GitHub: develop](https://github.com/RTU-BERI/BERI/tree/develop) и [PR #8](https://github.com/RTU-BERI/BERI/pull/8), [PR #9](https://github.com/RTU-BERI/BERI/pull/9), [PR #10](https://github.com/RTU-BERI/BERI/pull/10), [PR #11 — Admin](https://github.com/RTU-BERI/BERI/pull/11), [PR #12 — Desktop-каталог](https://github.com/RTU-BERI/BERI/pull/12), [PR #13 — страница товара](https://github.com/RTU-BERI/BERI/pull/13).
 - [PR #3 — каноническая БД](https://github.com/RTU-BERI/BERI/pull/3), [PR #6 — категории](https://github.com/RTU-BERI/BERI/pull/6), [PR #7 — permissions](https://github.com/RTU-BERI/BERI/pull/7).
 - Актуальные исходники в `backend/config/`, `backend/apps/`, `frontend/`, `docs/`; открывать файлы непосредственно перед новым PR.
