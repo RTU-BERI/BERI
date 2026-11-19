@@ -1,6 +1,6 @@
 # BERI API — current public contracts
 
-Updated 2026-11-19 against develop `0a565ac97ec9364430403c78ed4f01333ff3b39a` (merged PR #8–16). Category validation from S1 is merged in #14. The local `feature/s2-p4-inspections` adds the employee endpoints below; it is not yet published.
+Updated 2026-11-20 against develop `9bf42db47f76b848e883f285ffd0caf67ce0c8b7` (merged PR #8–17). Local `feature/s2-p5-rental-start` adds BERI-301-C issuance below; this branch has not been published.
 
 | Method | Path | Current contract |
 |---|---|---|
@@ -81,7 +81,7 @@ inspection history. See [merged PR #11](https://github.com/RTU-BERI/BERI/pull/11
 [Admin code](../backend/apps/catalog/admin.py) and
 [history tests](../backend/apps/catalog/test_admin_history.py). The former local
 S1-P3 plan/report are not present in this Git tree; their content is not invented here. No public product,
-tariff or component write API is added. Booking creation/expiry and the customer/employee booking APIs are merged in PR #15/#16. Rental issuance/return and payment APIs remain future work.
+tariff or component write API is added. Booking creation/expiry and the customer/employee booking APIs are merged in PR #15/#16. Rental issuance is added locally in S2-P5 below; return and payment APIs remain future work.
 
 ## Category integration context (PR #6)
 
@@ -200,7 +200,7 @@ The current README describes PostgreSQL setup. Do not substitute SQLite for thes
 
 ## S2-P4 pre-issue inspections and replacement
 
-These endpoints are local to feature/s2-p4-inspections, BERI-301-A/B.
+These BERI-301-A/B endpoints are merged in PR #17.
 Session authentication and CSRF remain enabled. An active Account of employee
 type AND an Employee profile in the booking's stored pickup point are required.
 Staff/superuser flags never bypass Employee or point checks. API code does not
@@ -274,7 +274,7 @@ within the approved aggregate bound. No penalty/debt is inferred from a problem.
 Successful POST returns200 with inspection (explicit history fields/problems),
 reservation_id/status, initial/assigned_product_item_id, assignment_id, sequence_no.
 Inspection timestamps/actor/type/parent are server-owned. customer_confirmed_at
-remains null, no Rental or issuance is created. The first inspection freezes the
+remains null. Inspection/replacement does not create Rental; issuance is a separate operation below. The first inspection freezes the
 existing product's component set via canonical guards.
 
 One immutable observation per current assignment: same employee and exact same
@@ -305,3 +305,65 @@ uses is_active, not an invented Account.status or Product/PV status vocabulary.
 Implementation: [services](../backend/apps/rentals/services.py),
 [API](../backend/apps/rentals/views.py), [tests](../backend/apps/rentals/test_pre_issue.py).
 Checks, limitations and handoff: [S2-P4 report](s2-p4-report.md).
+
+
+## S2-P5 rental start (BERI-301-C, local branch)
+
+`POST /api/employee/reservations/{uuid}/issue/` (`rental-start`). Request:
+
+```json
+{"expected_assignment_id": 17}
+```
+
+The ID comes from GET inspections. Standard DRF positive BIGINT validation applies.
+Unknown/server fields (payment_method_id, employee_id, tariff_id, status, timestamps)
+are 400. Retain the original assignment ID for retry after fulfillment.
+
+Requires an active employee Account, Employee profile in the stored PV and all of:
+`rentals.add_rental`, `reservations.change_reservation`,
+`reservations.change_reservationitemassignment`, `inventory.change_productitem`.
+Staff is not required; superuser cannot bypass Employee/PV scope. Existing session
+and CSRF behavior is preserved; no new authentication or demo launch mode is added.
+
+Admission: active customer Account of type customer, active unexpired booking after
+waiting locks, current open assignment,
+reserved item with consistent PV/location/history and no active Rental, one positive
+current pre_issue Inspection without problems, no open customer Debt, own default/
+active/confirmed PaymentMethod passing existing model validation, and a tariff
+covering the final event time. Issuance neither verifies a bank card nor inspects
+an ID prefix, DEBUG, client address or database infrastructure.
+
+Atomically: insert Rental(active) with actual item/employee/payment/tariff/rate and
+started_at=T; set Reservation fulfilled/completed_at=T; close current Assignment
+released_at=T; set Item rented. Earlier history and Inspection are unchanged.
+ended_at, ended_by_employee and final_amount remain null.
+
+Response is one Rental object with exactly: id, reservation_id, product_item_id,
+status, started_at, started_by_employee_id, tariff_id, hourly_rate_applied.
+UUIDs are strings, item/tariff/employee IDs are integers, rate is a Decimal string.
+No payment identifier or customer phone is exposed. First success 201; exact replay
+by the same employee and assignment 200; incompatible replay 409. Replay still checks
+access but does not rerun TTL, current payment/debt/tariff admission or _locked_booking.
+
+Errors: 400 invalid input; 403 access/CSRF; 404 absent/foreign-PV booking; 409 lifecycle,
+assignment, inspection, debt, payment, tariff or busy/conflicting operation.
+Existing DRF field-error/detail conventions remain; auth's envelope is unchanged.
+Failure does not extend/cancel a booking or partially issue an item.
+
+The existing _source Product/PV locks protect the Rental existence precheck.
+Replay then locks Reservation and returns without taking Item afterward. New issue
+locks Customer before Item, then Reservation/Assignments/location through
+_locked_booking, PaymentMethod and Tariff. Time and permissions are rechecked after
+all waiting locks. If the selected tariff expired while waiting, 409 allows refresh/
+retry. Tariff.save's existing history guard remains intact. Future debt/default
+writers must take Customer before financial rows to protect the absence predicate.
+
+Test data only: `python manage.py create_test_payment_method CLIENT_UUID` uses DEBUG
+for the command, generates a test identifier and refuses to replace an existing
+default (returns its ID without changes). No PAN/CVV, provider verification or
+public payment creation endpoint is added. The issue service accepts any otherwise
+valid PaymentMethod, including a future provider-created record.
+
+MVP limit: the employee confirms physical handover. Separate customer confirmation
+is not implemented; customer_confirmed_at is not populated and NULL does not block
+issuance. Return, billing, Payment/Debt writes and Frontend are outside this task.
