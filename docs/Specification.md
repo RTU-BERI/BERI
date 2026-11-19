@@ -1,12 +1,12 @@
 # БЕРИ — Specification.md для Codex
 
-> **Версия документа:** 1.2.4
+> **Версия документа:** 1.2.5
 >
-> **Актуализация:** 2026-11-03
+> **Актуализация:** 2026-11-16
 > **Репозиторий:** https://github.com/RTU-BERI/BERI  
-> **Проверенная база:** удалённый `develop`, HEAD `c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b` (Git ls-remote и metadata merged PR #8–13, 03.11.2026). Исправляющая ветка: `fix/s1-audit-closure`.
+> **Проверенная база:** удалённый `develop`, HEAD `e31f18aa6f9de52fe2aab1ae4667017a70a6b1ed` (merge PR #14). Рабочая ветка `feature/s2-p1-booking`.
 >
-> **Статус:** develop включает merged PR #8–13. Локальное закрытие D1–D6 готовится в `fix/s1-audit-closure` без commit/push/PR/merge. Новые проверки, Code/Security Review и ограничения — [отчёт закрытия](s1-audit-closure-report.md); история S1-P6 — [отчёт](s1-p6-report.md). S1 не объявляется безусловно принятым до согласования результата и открытых бизнес-решений.
+> **Статус:** `develop` включает PR #8–14. Рабочая ветка S2-P1 содержит сервис создания брони и команду истечения. Исторические результаты S1 описаны в [отчёте закрытия аудита](s1-audit-closure-report.md).
 > **Хранение:** пользователь 31.10.2026 разрешил включать этот `Specification.md` в Git и удалённый репозиторий вместе с изменениями проекта. Файл должен входить в соответствующий PR. Это не разрешение Codex выполнять commit/push/merge: правила §2 сохраняются.
 
 ## 1. Назначение и обязательность
@@ -237,7 +237,8 @@ UUID PK: `account`, `reservation`, `rental`, `payment_method`, `payment`, `debt`
 | BERI-107-A/B, Django Admin карточек/атрибутов/тарифов | merged PR #11; код catalog/admin*.py и тесты истории. Отсутствующие s1-p3-*.md не считаются доступными источниками |
 | BERI-108-A, Desktop-каталог | merged PR #12, merge commit d277aa2; исторические проверки в docs/s1-p5-report.md |
 | BERI-108-B, подробная карточка S1-P6 | merged PR #13; аудит общего c018bb4 выявил D1–D6, исправления и свежие проверки — в s1-audit-closure-report.md |
-| Бронирование, выдача, возврат, расчёт, sandbox-платёж | впереди; модели уже существуют |
+| BERI-202-A и BERI-203-A | рабочая ветка S2-P1. Создание брони на 60 минут, истечение, команда `expire_reservations`. [Код сервиса](../backend/apps/reservations/services.py) |
+| HTTP API и UI бронирования, выдача, возврат, расчёт, sandbox-платёж | следующие задачи |
 
 План трёх спринтов от 26.10 — **предложение**, не основание приписывать TODO-задаче готовность. Актуализируй его статусы после проверенного merge. Наличие старой записи в README не отменяет merge #8–#10.
 
@@ -288,6 +289,7 @@ CSS baseline в тестах, актуальный статус merged #8–13 �
 | 2026-11-02 | **1.2.1 → 1.2.2** | BERI-108-A: публичный Desktop-каталог, поиск и категории через API, сброс, состояния и image fallback; общая навигация с сохранением auth. Учтён merge S1-P3 #11. README, API, auth и новый s1-p5-report.md актуализированы | PR pending, feature/s1-p5-catalog, base 9bcc95bbbf191de11f1e4577165983730d20e303. Фактические проверки и ограничения — s1-p5-report.md; commit/push/PR не выполнены |
 | 2026-11-03 | **1.2.2 → 1.2.3** | Учтён merged PR #12. BERI-108-B: `/products/:id`, тариф, характеристики, комплектация, ПВ/остатки, ошибки/404 и клавиатура; README, API, auth и s1-p6-report.md актуализированы без изменения бизнес-спецификации | PR pending, feature/s1-p6-product → develop; проверенная база d277aa22d8513092b4d287f79fe042a1cf259bde. Build, 30 UI, 1 штатный live + 4 локальных live прошли; полный backend suite не запускался, финальные Code/Security Review ожидаются; commit/push/PR/merge не выполнялись |
 | 2026-11-03 | **1.2.3 → 1.2.4 (PATCH)** | Закрытие D1–D6: category/400, HTTP API coverage, keyboard/CSS тесты, merged #8–13 и исправление ссылок; README/API/P6-report и новый closure report. Исторические даты и результаты сохранены; CR-1 закрыт заменой оставшейся смысловой отсылки на PR #11, Admin и реальные тесты | `fix/s1-audit-closure`, PR pending (не создан), base c018bb4a3371f3cc14bf7d8ae6524a6da3343f9b. Фактические новые результаты/риски — s1-audit-closure-report.md; модели и миграции неизменны, commit/push/PR/merge не выполнялись |
+| 2026-11-16 | **1.2.4 → 1.2.5** | S2-P1 включает BERI-202-A и BERI-203-A. Атомарное создание, повторы по UUID запроса, срок 60 минут и освобождение по команде Django. Интеграция с выдачей через проверку `expires_at`. | `feature/s2-p1-booking`, PR pending, база `develop` `e31f18aa6f9de52fe2aab1ae4667017a70a6b1ed`. PostgreSQL 17, чистое применение миграций, Django check, 711 Backend-тестов (14 новых). |
 
 ## 11. Источники для обязательной сверки
 
