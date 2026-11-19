@@ -4,6 +4,9 @@ import {RegisterPage} from './features/auth/RegisterPage';
 import {useAuth} from './features/auth/AuthProvider';
 import {CatalogPage} from './features/catalog/CatalogPage';
 import {ProductPage} from './features/product/ProductPage';
+import {useEffect} from 'react';
+import {MyReservationsPage} from './features/reservations/MyReservationsPage';
+import {clearReservationOperations} from './features/reservations/operations';
 
 function AuthLayout() {
   return <main><aside><p className="eyebrow">МЕНЬШЕ ПОКУПОК. БОЛЬШЕ ВОЗМОЖНОСТЕЙ.</p><h2>Бери для дела.<br/>Возвращай<br/><em>без забот.</em></h2><p>Нужные вещи — тогда, когда они нужны.</p><div className="graphic" aria-hidden="true"><span>Б</span><i>↗</i></div></aside><Outlet/></main>;
@@ -11,12 +14,14 @@ function AuthLayout() {
 
 export function App() {
   const auth = useAuth();
+  useEffect(() => {clearReservationOperations();}, [auth.user?.id]);
   return <><header><Link className="brand" to="/catalog">БЕРИ<span>на время</span></Link>
-    <nav aria-label="Основная навигация"><NavLink to="/catalog">Каталог</NavLink><NavLink to="/login">{auth.authenticated ? 'Мой аккаунт' : 'Войти'}</NavLink>{!auth.authenticated && <NavLink to="/register">Регистрация</NavLink>}</nav>
+    <nav aria-label="Основная навигация"><NavLink to="/catalog">Каталог</NavLink>{auth.authenticated && auth.user?.account_type === 'customer' && <NavLink to="/my-reservations">Мои бронирования</NavLink>}<NavLink to="/login">{auth.authenticated ? 'Мой аккаунт' : 'Войти'}</NavLink>{!auth.authenticated && <NavLink to="/register">Регистрация</NavLink>}</nav>
     <span className="demo-tag">Локальная демонстрация</span></header>
     <Routes>
       <Route path="/catalog" element={<CatalogPage/>}/>
       <Route path="/products/:id" element={<ProductPage/>}/>
+      <Route path="/my-reservations" element={<MyReservationsPage/>}/>
       <Route element={<AuthLayout/>}><Route path="/login" element={<LoginPage/>}/><Route path="/register" element={<RegisterPage/>}/></Route>
       <Route path="*" element={<Navigate to="/catalog" replace/>}/>
     </Routes>

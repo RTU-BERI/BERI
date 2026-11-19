@@ -4,10 +4,12 @@ import type {PickupPoint, ProductAvailability} from './types';
 
 type LoadState<T> = {status: 'loading'} | {status: 'error'} | {status: 'ready'; data: T};
 
-export function PickupAvailability({productId}: {productId: number}) {
+export function PickupAvailability({productId, selectedId, onSelectedIdChange, onPointChange, refreshKey, locked}: {
+  productId: number; selectedId: string; onSelectedIdChange: (id: string) => void;
+  onPointChange: (point: PickupPoint | undefined) => void; refreshKey: number; locked: boolean;
+}) {
   const [points, setPoints] = useState<LoadState<PickupPoint[]>>({status: 'loading'});
   const [availability, setAvailability] = useState<LoadState<ProductAvailability>>({status: 'loading'});
-  const [selectedId, setSelectedId] = useState('');
   const [pointsRetry, setPointsRetry] = useState(0);
   const [availabilityRetry, setAvailabilityRetry] = useState(0);
 
@@ -25,9 +27,10 @@ export function PickupAvailability({productId}: {productId: number}) {
     getProductAvailability(productId).then(data => {if (active) setAvailability({status: 'ready', data});})
       .catch(() => {if (active) setAvailability({status: 'error'});});
     return () => {active = false;};
-  }, [productId, availabilityRetry]);
+  }, [productId, availabilityRetry, refreshKey]);
 
   const selectedPoint = points.status === 'ready' ? points.data.find(point => String(point.id) === selectedId) : undefined;
+  useEffect(() => {onPointChange(selectedPoint);}, [selectedPoint, onPointChange]);
   const count = selectedPoint && availability.status === 'ready'
     ? availability.data.pickup_points.find(point => point.pickup_point_id === selectedPoint.id)?.available_count
     : undefined;
@@ -37,8 +40,8 @@ export function PickupAvailability({productId}: {productId: number}) {
     <h2 id="product-pickup-title">Пункт выдачи и наличие</h2>
     <label htmlFor="product-pickup">Выберите пункт выдачи</label>
     <select id="product-pickup" value={selectedPoint ? selectedId : ''}
-      disabled={points.status !== 'ready' || points.data.length === 0}
-      onChange={event => setSelectedId(event.target.value)}>
+      disabled={locked || points.status !== 'ready' || points.data.length === 0}
+      onChange={event => onSelectedIdChange(event.target.value)}>
       <option value="">Выберите пункт выдачи</option>
       {points.status === 'ready' && points.data.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
     </select>
