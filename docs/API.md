@@ -1,6 +1,6 @@
 # BERI API — current public contracts
 
-Updated 2026-11-19 against develop `0a565ac97ec9364430403c78ed4f01333ff3b39a` (merged PR #8–16). Category validation from S1 is merged in #14. The local `feature/s2-p4-inspections` adds the employee endpoints below; it is not yet published.
+Updated 2026-11-20 against develop `9bf42db47f76b848e883f285ffd0caf67ce0c8b7` (merged PR #8–17). Category validation from S1 is merged in #14, inspections/replacement in #17. The S2-P6 frontend consumes these contracts and the issue contract from open PR #19. Their combined live verification is recorded in [S2-P6 report](s2-p6-report.md).
 
 | Method | Path | Current contract |
 |---|---|---|
@@ -200,7 +200,7 @@ The current README describes PostgreSQL setup. Do not substitute SQLite for thes
 
 ## S2-P4 pre-issue inspections and replacement
 
-These endpoints are local to feature/s2-p4-inspections, BERI-301-A/B.
+These endpoints are merged in PR #17, BERI-301-A/B.
 Session authentication and CSRF remain enabled. An active Account of employee
 type AND an Employee profile in the booking's stored pickup point are required.
 Staff/superuser flags never bypass Employee or point checks. API code does not
@@ -305,3 +305,40 @@ uses is_active, not an invented Account.status or Product/PV status vocabulary.
 Implementation: [services](../backend/apps/rentals/services.py),
 [API](../backend/apps/rentals/views.py), [tests](../backend/apps/rentals/test_pre_issue.py).
 Checks, limitations and handoff: [S2-P4 report](s2-p4-report.md).
+
+## S2-P6 employee Desktop consumer (BERI-206-B)
+
+UI routes are `/employee/reservations` and `/employee/reservations/{uuid}`.
+The list GET returns an array using the existing ReservationSerializer. The
+screen keeps ID, product/PV/item IDs, status and expires_at. Customer phone is
+discarded from screen state and is not rendered. History GET supplies the
+current expected_assignment_id for every write, including the first inspection.
+
+The healthy inspection uses condition_ok=true, completeness_ok=true and an
+empty problems array. The minimal replacement form records one condition
+problem (damage, malfunction or other), description and reason up to 30 chars.
+Completeness is explicitly checked. Missing-component input, which requires
+component IDs and quantities, is outside this minimal form. History can display
+all problem descriptions returned by the server.
+
+Replacement omits replacement_item_id for automatic server selection. An
+unchecked cancellation consent omits completion_reason. No candidate then
+produces the existing 400 rollback. Explicit consent includes the literal
+`Нет свободной замены`. No candidate then cancels atomically. A busy/conflicting
+item remains a 409 and does not imply cancellation.
+
+The issue request in PR #19 is
+`POST /api/employee/reservations/{uuid}/issue/` with only
+`{"expected_assignment_id":17}`. First success is 201, exact replay is 200.
+The Rental JSON includes id, reservation_id, product_item_id, status, started_at,
+started_by_employee_id, tariff_id and hourly_rate_applied. The screen keeps only
+id/status/started_at, shows successful handover/start and reloads history. The
+list is fetched again when returning from details. Admission, actual timestamps,
+financial conditions and all lifecycle writes belong to Django.
+
+Session/CSRF use the existing shared client. A synchronous in-flight guard plus
+disabled controls prevents a double click. Failed POST is never automatically
+retried. After a conflict or an unknown result, only a GET refresh re-enables
+actions. A recorded healthy inspection or fulfilled booking is reconciled from
+history rather than replaying the write. HTTP 400, 401/403, 404, 409 and network
+failures have explicit Russian messages. No server contract changes are made.

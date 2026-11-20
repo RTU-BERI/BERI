@@ -1,3 +1,4 @@
+import {EmployeePage} from './features/employee/EmployeePage';
 import {Link, Navigate, NavLink, Outlet, Route, Routes} from 'react-router-dom';
 import {LoginPage} from './features/auth/LoginPage';
 import {RegisterPage} from './features/auth/RegisterPage';
@@ -14,7 +15,9 @@ export function App() {
   return <><header><Link className="brand" to="/catalog">БЕРИ<span>на время</span></Link>
     <nav aria-label="Основная навигация"><NavLink to="/catalog">Каталог</NavLink><NavLink to="/login">{auth.authenticated ? 'Мой аккаунт' : 'Войти'}</NavLink>{!auth.authenticated && <NavLink to="/register">Регистрация</NavLink>}</nav>
     <span className="demo-tag">Локальная демонстрация</span></header>
+    {auth.authenticated && auth.user?.account_type === 'employee' && <nav className="employee-entry" aria-label="Рабочее место"><NavLink to="/employee/reservations">Выдача товаров →</NavLink></nav>}
     <Routes>
+      <Route path="/employee/reservations/*" element={<EmployeePage/>}/>
       <Route path="/catalog" element={<CatalogPage/>}/>
       <Route path="/products/:id" element={<ProductPage/>}/>
       <Route element={<AuthLayout/>}><Route path="/login" element={<LoginPage/>}/><Route path="/register" element={<RegisterPage/>}/></Route>

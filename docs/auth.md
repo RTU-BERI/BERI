@@ -147,6 +147,14 @@ minimum bootstrap to demonstrate auth, not the catalogue/general product shell.
 The shared shell/layout/router from S1-P5 is merged in PR #12 and reuses this
 bootstrap/AuthProvider; S1-P6 extends its router with product details.
 
+S2-P6 adds `/employee/reservations/*` and a separate employee entry below the
+header. Anonymous users see the login link. Customer accounts see an access
+message. Actual Employee profile, point scope and every model permission are
+checked by Django. Role-aware navigation is only a UI aid. Employee histories
+are cleared by unmounting on logout or account change. See [S2-P6](s2-p6-report.md).
+App changes apply cleanly over PR #18. Its shared client and login returnTo
+changes were tested together in a temporary integration copy.
+
 ## Verification
 
 With a disposable PostgreSQL configured, from backend:

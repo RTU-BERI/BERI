@@ -1,0 +1,31 @@
+.employee-entry{max-width:1180px;margin:0 auto;padding:0 32px;text-align:right;font-size:14px}
+.employee-page{display:block;max-width:1180px;min-width:960px;min-height:620px;margin:24px auto 60px;padding:0 32px}
+.employee-title{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:20px 0}
+.employee-title h1{font-size:32px;margin:0}
+.employee-title button{margin:0}
+.employee-page h2{font-size:23px;line-height:1.3;letter-spacing:-.5px;margin:0 0 18px}
+.employee-page h3{font-size:18px;margin:10px 0}
+.employee-table{width:100%;border-collapse:collapse;background:white;border:1px solid #d7dfd5}
+.employee-table caption{text-align:left;color:#69776e;margin-bottom:14px;font-size:14px}
+.employee-table th,.employee-table td{text-align:left;padding:18px 14px;border-bottom:1px solid #d7dfd5;vertical-align:top;font-size:14px}
+.employee-table th{background:#edf0e5;font-size:12px}
+.reservation-number{overflow-wrap:anywhere;font-size:13px}
+.employee-table .reservation-number{max-width:230px}
+.employee-panel,.employee-success{background:#fff;padding:28px;border:1px solid #e1e5d8;border-radius:18px;margin:24px 0}
+.employee-success{background:#edf3e7}
+.employee-summary{display:flex;gap:40px;padding:20px;background:#edf0e5;border-radius:12px}
+.employee-summary dt{font-size:12px;color:#69776e}
+.employee-summary dd{margin:6px 0 0;font-weight:650}
+.employee-page fieldset{border:0;padding:0;margin:0;min-width:0}
+.employee-page fieldset:disabled{opacity:.65}
+.employee-page textarea,.employee-page select{font:inherit;width:100%;padding:12px 14px;border:1px solid #d7dfd5;border-radius:9px;color:#183d37;background:#fafbf8}
+.employee-page textarea{min-height:76px;resize:vertical}
+.employee-page label{margin:14px 0}
+.employee-page .employee-check{display:flex;flex-direction:row;align-items:flex-start;gap:10px;font-size:14px;font-weight:500}
+.employee-check input{width:18px;height:18px;flex-shrink:0;margin:2px 0 0;accent-color:#234c3f}
+.employee-replacement{display:block;max-width:720px;margin-top:32px;padding-top:24px;border-top:1px solid #d7dfd5}
+.employee-replacement p,.employee-help{font-size:13px;color:#69776e}
+.employee-history{padding-left:22px}
+.employee-history li{padding:12px 0;border-bottom:1px solid #edf0e5;overflow-wrap:anywhere}
+.employee-history p{margin:6px 0;font-size:14px}
+.employee-handover{margin-top:20px}
