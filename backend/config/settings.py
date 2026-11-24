@@ -31,6 +31,25 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
+# Payment adapter configuration.
+PAYMENT_ADAPTER = env(
+    "PAYMENT_ADAPTER",
+    default="disabled",
+)
+
+PAYMENT_TEST_SCENARIO = env(
+    "PAYMENT_TEST_SCENARIO",
+    default="succeeded",
+)
+
+if PAYMENT_ADAPTER not in {"disabled", "test"}:
+    raise ValueError("Unsupported payment adapter configuration.")
+
+if PAYMENT_TEST_SCENARIO not in {"succeeded", "failed", "pending"}:
+    raise ValueError("Unsupported payment test scenario.")
+
+if PAYMENT_ADAPTER == "test" and not DEBUG:
+    raise ValueError("Test payment adapter is allowed only in DEBUG mode.")
 
 ALLOWED_HOSTS = env.list(
     "DJANGO_ALLOWED_HOSTS",
