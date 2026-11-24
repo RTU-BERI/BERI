@@ -198,6 +198,12 @@ class Payment(models.Model):
         PaymentMethod, on_delete=models.PROTECT, related_name="payments"
     )
     external_id = models.CharField(max_length=255, null=True, blank=True)
+    idempotency_key = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        unique=True,
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, choices=Status.choices)
     failure_code = models.CharField(max_length=100, null=True, blank=True)
